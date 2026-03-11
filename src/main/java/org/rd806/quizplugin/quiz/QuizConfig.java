@@ -5,7 +5,10 @@ import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Sound;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.scheduler.BukkitTask;
 import org.rd806.quizplugin.QuizPlugin;
 import org.rd806.quizplugin.database.DataSourceManager;
 import org.rd806.quizplugin.database.DatabaseConfig;
@@ -19,6 +22,8 @@ public class QuizConfig {
     private String storageType;
     private int interval;
     private int maxNum;
+
+    private BukkitTask send;
 
     public QuizConfig() {
         this.storageType = QuizPlugin.config.getString("config.storage", "YAML");
@@ -56,16 +61,15 @@ public class QuizConfig {
     // 发送随机Quzi
     public void sendRandomQuiz() {
         Random random = new Random();
-        int id = random.nextInt(maxNum);
+        int id = random.nextInt(maxNum) + 1;
 
         if (storageType.equalsIgnoreCase("YAML")) {
-            QuizPlugin.main.yamlControl.getQuizById(id);
-            QuizPlugin.logger.info("Sending random quiz: " + id);
+            QuizPlugin.main.quiz = QuizPlugin.main.yamlControl.getQuizById(id);
         }  else if (storageType.equalsIgnoreCase("MYSQL")) {
-            int num =  id + 1;
-            QuizPlugin.main.sqlControl.getQuizById(num);
-            QuizPlugin.logger.info("Sending random quiz: " + num);
+            QuizPlugin.main.quiz = QuizPlugin.main.sqlControl.getQuizById(id);
         }
+
+        QuizPlugin.logger.info("Sending random quiz: " + id);
         sendText();
     }
 
@@ -78,11 +82,21 @@ public class QuizConfig {
         }
 
         if (storageType.equalsIgnoreCase("YAML")) {
-            QuizPlugin.main.yamlControl.getQuizById(id);
+            QuizPlugin.main.quiz = QuizPlugin.main.yamlControl.getQuizById(id);
         }  else if (storageType.equalsIgnoreCase("MYSQL")) {
-            QuizPlugin.main.sqlControl.getQuizById(id);
+            QuizPlugin.main.quiz = QuizPlugin.main.sqlControl.getQuizById(id);
         }
         sendText();
+    }
+
+    // 获取特定Quiz
+    public Quiz getQuizById(int id) {
+        if (storageType.equalsIgnoreCase("YAML")) {
+            return QuizPlugin.main.yamlControl.getQuizById(id);
+        } else if (storageType.equalsIgnoreCase("MYSQL")) {
+            return QuizPlugin.main.sqlControl.getQuizById(id);
+        }
+        return null;
     }
 
     // 重新加载Quiz
@@ -113,6 +127,18 @@ public class QuizConfig {
         message.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new Text("§7点击参加Quiz！")));
         QuizPlugin.main.getServer().spigot().broadcast(message);
     }
+
+   // 定时发送Quiz
+   public void sendQuiz() {
+        if (send != null) send.cancel();
+        // 每 interval 秒发送一次
+        send = new BukkitRunnable() {
+            @Override
+            public void run() {
+                sendRandomQuiz();
+            }
+        }.runTaskTimer(QuizPlugin.main, 0L, 20L * interval);
+   }
 
     // 检查玩家是否回答正确
     public void check(Player player, String response) {
@@ -145,6 +171,20 @@ public class QuizConfig {
 
         player.closeInventory();
         player.sendMessage(QuizPlugin.config.getString("messages.wrong", "Your answer is wrong!"));
+    }
+
+    // 获取特定的Quiz信息
+    public void getQuizInfo(CommandSender sender, Quiz quiz) {
+        sender.sendMessage("The chosen quiz id is: " + quiz.getId());
+        sender.sendMessage("-----------------------");
+        sender.sendMessage("Question: " + quiz.getQuestion());
+        sender.sendMessage("Option A: " + quiz.getOptions().get(0));
+        sender.sendMessage("Option B: " + quiz.getOptions().get(1));
+        sender.sendMessage("Option C: " + quiz.getOptions().get(2));
+        sender.sendMessage("Option D: " + quiz.getOptions().get(3));
+        sender.sendMessage("Answer: " + quiz.getAnswer());
+        sender.sendMessage("Reward: " + quiz.getReward().toString());
+        sender.sendMessage("-----------------------");
     }
 
     public String getStorageType() { return this.storageType; }

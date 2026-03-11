@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.rd806.quizplugin.QuizPlugin;
+import org.rd806.quizplugin.quiz.Quiz;
 
 public class QuizCommand implements CommandExecutor {
 
@@ -30,6 +31,10 @@ public class QuizCommand implements CommandExecutor {
         if (args[0].equals("open")) {
             if (sender instanceof Player) {
                 player = (Player) sender;
+                if (!player.hasPermission("quizplugin.open")) {
+                    sender.sendMessage("§cYou do not have permission \"quizplugin.open\" to use this command.");
+                    return false;
+                }
                 Inventory quizMenu = QuizPlugin.main.quizGui.createQuizMenu(player);
                 player.openInventory(quizMenu);
                 return true;
@@ -38,17 +43,37 @@ public class QuizCommand implements CommandExecutor {
 
         // 查找操作
         if (args[0].equals("show")) {
+            // 权限检查
             if (sender instanceof Player) {
                 player = (Player) sender;
-                if (!player.hasPermission("quizplugin.show")) return false;
+                if (!player.hasPermission("quizplugin.show")) {
+                    sender.sendMessage("§cYou do not have permission \"quizplugin.show\" to use this command.");
+                    return false;
+                }
             }
             // 获取题目数量
             if (args[1].equals("num")) {
                 sender.sendMessage("The total number of the Quiz is " + QuizPlugin.main.quizConfig.getMaxNum());
                 return true;
             }
+            // 展示题目信息
+            if (args[1].equals("info")) {
+                // 获取当前Quiz信息
+                if (args.length == 2) {
+                    QuizPlugin.main.quizConfig.getQuizInfo(sender, QuizPlugin.main.quiz);
+                    return true;
+                }
+                // 获取特定 ID 的 Quiz 信息
+                int num = Integer.parseInt(args[2]);
+                if (num > QuizPlugin.main.quizConfig.getMaxNum()) {
+                    QuizPlugin.logger.warning("The chosen id is out of bounds or NOT FOUND!");
+                    return false;
+                }
+                Quiz temp = QuizPlugin.main.quizConfig.getQuizById(num);
+                QuizPlugin.main.quizConfig.getQuizInfo(sender, temp);
+                return true;
+            }
         }
-
 
         // 重载Quiz
         if (args[0].equals("reload")) {

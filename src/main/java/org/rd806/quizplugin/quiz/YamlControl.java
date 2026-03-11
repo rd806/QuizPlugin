@@ -38,9 +38,11 @@ public class YamlControl {
             return;
         }
         // 将文本转换成quizList
+        int i = 1;
         for (Map<?, ?> tempMap : quizMap) {
             Quiz tempQuiz = new Quiz();
             // 设置问题
+            tempQuiz.setId(i);
             tempQuiz.setQuestion((String) tempMap.get("question"));
             tempQuiz.setAnswer((String) tempMap.get("answer"));
             // 设置选项
@@ -61,6 +63,7 @@ public class YamlControl {
             }
 
             quizList.add(tempQuiz);
+            i ++;
         }
 
         maxId = quizList.size();
@@ -69,8 +72,9 @@ public class YamlControl {
     }
 
     // 获取特定的Quiz
-    public void getQuizById(int id) {
-        QuizPlugin.main.quiz = quizList.get(id);
+    public Quiz getQuizById(int id) {
+        // List 默认从 0 开始编号
+        return quizList.get(id - 1);
     }
 
     // 清空Quiz

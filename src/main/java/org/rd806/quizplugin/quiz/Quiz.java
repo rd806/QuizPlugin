@@ -6,6 +6,7 @@ import java.util.*;
 
 public class Quiz {
     // 基本信息
+    private int id;
     private String question;
     private String answer;
     private List<String> options;
@@ -15,10 +16,13 @@ public class Quiz {
     private UUID winner;
 
     public Quiz() {
+        this.id = -1;
         this.options = new ArrayList<>();
         this.answeredPlayers = new HashSet<>();
     }
 
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
     public String getQuestion() { return question; }
     public void setQuestion(String question) { this.question = question; }

@@ -43,7 +43,7 @@ public class SqlControl {
     }
 
     // 根据id获取对应的Quiz
-    public void getQuizById(int id) {
+    public Quiz getQuizById(int id) {
         String sql = "SELECT * FROM quiz WHERE id = ?";
 
         try(Connection connection = dataSourceManager.getConnection();
@@ -53,29 +53,31 @@ public class SqlControl {
             ResultSet resultSet = statement.executeQuery();
 
             if (resultSet.next()) {
+                Quiz temp = new Quiz();
                 // 设置问题
-                QuizPlugin.main.quiz.setQuestion(resultSet.getString("question"));
-                QuizPlugin.main.quiz.setAnswer(resultSet.getString("answer"));
+                temp.setId(resultSet.getInt("id"));
+                temp.setQuestion(resultSet.getString("question"));
+                temp.setAnswer(resultSet.getString("answer"));
                 // 设置选项
                 List<String> options = new ArrayList<>();
                 options.add(resultSet.getString("option_a"));
                 options.add(resultSet.getString("option_b"));
                 options.add(resultSet.getString("option_c"));
                 options.add(resultSet.getString("option_d"));
-                QuizPlugin.main.quiz.setOptions(options);
+                temp.setOptions(options);
                 // 设置奖励
                 String rewardName = resultSet.getString("reward");
                 Material rewardMaterial = Material.matchMaterial(rewardName.toUpperCase());
                 if (rewardMaterial != null) {
                     ItemStack rewardItem = new ItemStack(rewardMaterial);
-                    QuizPlugin.main.quiz.setReward(rewardItem);
+                    temp.setReward(rewardItem);
                 }
+                return temp;
             }
-
         } catch (SQLException e) {
             QuizPlugin.logger.warning("Quiz list initialized failed!" + e.getMessage());
         }
-
+        return null;
     }
 
     // 关闭数据库连接
